@@ -39,6 +39,9 @@ jobs:
         run: |
           [ "${{ steps.check-local.outcome }}" = "success" ]
           [ "${{ steps.check-local.outputs.result-count }}" = "3" ]
+          [ "${{ steps.check-local.outputs.result-count-success }}" = "3" ]
+          [ "${{ steps.check-local.outputs.result-count-failure }}" = "0" ]
+          [ "${{ steps.check-local.outputs.result-count-skipped }}" = "0" ]
 
       - name: Check artifact
         id: check-artifact
@@ -47,6 +50,9 @@ jobs:
         run: |
           [ "${{ steps.check-artifact.outcome }}" = "success" ]
           [ "${{ steps.check-artifact.outputs.result-count }}" = "3" ]
+          [ "${{ steps.check-artifact.outputs.result-count-success }}" = "3" ]
+          [ "${{ steps.check-artifact.outputs.result-count-failure }}" = "0" ]
+          [ "${{ steps.check-artifact.outputs.result-count-skipped }}" = "0" ]
 
       - name: Check empty
         id: check-empty
@@ -57,6 +63,9 @@ jobs:
         run: |
           [ "${{ steps.check-empty.outcome }}" = "success" ]
           [ "${{ steps.check-empty.outputs.result-count }}" = "0" ]
+          [ "${{ steps.check-empty.outputs.result-count-success }}" = "0" ]
+          [ "${{ steps.check-empty.outputs.result-count-failure }}" = "0" ]
+          [ "${{ steps.check-empty.outputs.result-count-skipped }}" = "0" ]
 
       - name: Check failure
         id: check-failure
@@ -67,4 +76,7 @@ jobs:
       - name: Test failure
         run: |
           [ "${{ steps.check-failure.outcome }}" = "failure" ]
-          [ "${{ steps.check-failure.outputs.result-count }}" = "1" ]
+          [ "${{ steps.check-failure.outputs.result-count }}" = "2" ]
+          [ "${{ steps.check-failure.outputs.result-count-success }}" = "1" ]
+          [ "${{ steps.check-failure.outputs.result-count-failure }}" = "1" ]
+          [ "${{ steps.check-failure.outputs.result-count-skipped }}" = "0" ]

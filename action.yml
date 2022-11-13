@@ -22,6 +22,15 @@ outputs:
   result-count:
     description: "Result count"
     value: ${{ steps.check.outputs.size }}
+  result-count-success:
+    description: "Result count of success"
+    value: ${{ steps.check.outputs.success }}
+  result-count-failure:
+    description: "Result count of failure"
+    value: ${{ steps.check.outputs.failure }}
+  result-count-skipped:
+    description: "Result count of skipped"
+    value: ${{ steps.check.outputs.skipped }}
 runs:
   using: composite
   steps:
@@ -34,14 +43,20 @@ runs:
       shell: bash
       id: check
       run: |
-        results=$(jq -r '.files | map(.verifications[]|.status)[]' ${RESULT_FILES:=$ARTIFACT_FILES})
-        if [ "$results" = "" ]; then
-          size=0
-        else
-          size=$(echo "$results" | wc -l)
-        fi
+        result_group_by=$(jq -sr 'map(.files[].verifications[].status) | group_by(.) | map({key:.[0], value: length})|from_entries' ${RESULT_FILES:=$ARTIFACT_FILES})
+        echo "$result_group_by"
+
+        success=$(echo "$result_group_by" |jq '.success//0')
+        failure=$(echo "$result_group_by" |jq '.failure//0')
+        skipped=$(echo "$result_group_by" |jq '.skipped//0')
+        size=$(( $success + $failure + $skipped ))
+
+        echo "success=$success" >> $GITHUB_OUTPUT
+        echo "failure=$failure" >> $GITHUB_OUTPUT
+        echo "skipped=$skipped" >> $GITHUB_OUTPUT
         echo "size=$size" >> $GITHUB_OUTPUT
-        ! echo "$results" | grep failure
+
+        [ $(( $failure > 0 )) = 0 ]
       env:
         RESULT_FILES: ${{ inputs.local-result-path }}
         ARTIFACT_FILES: ${{ runner.temp }}/artifacts/${{ inputs.result-artifact-prefix }}*/${{ inputs.result-file-name }}
