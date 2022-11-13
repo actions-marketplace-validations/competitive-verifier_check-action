@@ -35,10 +35,28 @@ jobs:
         uses: ./
         with:
           local-result-path: tests/pyres*/competitive-verifier-result.json
+      - name: Test local
+        run: |
+          [ "${{ steps.check-local.outcome }}" = "success" ]
+          [ "${{ steps.check-local.outputs.result-count }}" = "3" ]
 
       - name: Check artifact
         id: check-artifact
         uses: ./
+      - name: Test artifact
+        run: |
+          [ "${{ steps.check-artifact.outcome }}" = "success" ]
+          [ "${{ steps.check-artifact.outputs.result-count }}" = "3" ]
+
+      - name: Check empty
+        id: check-empty
+        uses: ./
+        with:
+          local-result-path: tests/pyres3/competitive-verifier-result.json
+      - name: Test local
+        run: |
+          [ "${{ steps.check-empty.outcome }}" = "success" ]
+          [ "${{ steps.check-empty.outputs.result-count }}" = "0" ]
 
       - name: Check failure
         id: check-failure
@@ -46,9 +64,7 @@ jobs:
         uses: ./
         with:
           local-result-path: tests/failure-result.json
-
       - name: Test failure
         run: |
-          [ $FAILURE_RESULT = "failure" ]
-        env:
-          FAILURE_RESULT: ${{ steps.check-failure.outcome }}
+          [ "${{ steps.check-failure.outcome }}" = "failure" ]
+          [ "${{ steps.check-failure.outputs.result-count }}" = "1" ]

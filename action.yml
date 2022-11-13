@@ -18,6 +18,10 @@ inputs:
     description: "Result json file name."
     required: false
     default: "competitive-verifier-result.json"
+outputs:
+  result-count:
+    description: "Result count"
+    value: ${{ steps.check.outputs.size }}
 runs:
   using: composite
   steps:
@@ -28,9 +32,16 @@ runs:
 
     - name: Check verifications
       shell: bash
-      id: docs
+      id: check
       run: |
-        ! jq -r '.files | map(.verifications[]|.status)[]' ${RESULT_FILES:=$ARTIFACT_FILES} | grep failure
+        results=$(jq -r '.files | map(.verifications[]|.status)[]' ${RESULT_FILES:=$ARTIFACT_FILES})
+        if [ "$results" = "" ]; then
+          size=0
+        else
+          size=$(echo "$results" | wc -l)
+        fi
+        echo "size=$size" >> $GITHUB_OUTPUT
+        ! echo "$results" | grep failure
       env:
         RESULT_FILES: ${{ inputs.local-result-path }}
         ARTIFACT_FILES: ${{ runner.temp }}/artifacts/${{ inputs.result-artifact-prefix }}*/${{ inputs.result-file-name }}
