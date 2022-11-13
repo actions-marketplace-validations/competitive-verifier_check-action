@@ -1,0 +1,36 @@
+name: "Check competitive-verifier result"
+description: "A composite action that check result of competitive-verifier"
+author: "Kzrnm"
+branding:
+  color: blue
+  icon: check-circle
+inputs:
+  local-result-path:
+    description: "The file path of ressult json."
+    required: false
+    default: ""
+
+  result-artifact-prefix:
+    description: The name of artifact which contains verify result json.
+    required: false
+    default: ${{ runner.os }}-competitive-verifier-result
+  result-file-name:
+    description: "Result json file name."
+    required: false
+    default: "competitive-verifier-result.json"
+runs:
+  using: composite
+  steps:
+    - uses: actions/download-artifact@v3
+      if: inputs.local-result-path == ''
+      with:
+        path: ${{ runner.temp }}/artifacts
+
+    - name: Check verifications
+      shell: bash
+      id: docs
+      run: |
+        ! jq -r '.files | map(.verifications[]|.status)[]' ${RESULT_FILES:=$ARTIFACT_FILES} | grep failure
+      env:
+        RESULT_FILES: ${{ inputs.local-result-path }}
+        ARTIFACT_FILES: ${{ runner.temp }}/artifacts/${{ inputs.result-artifact-prefix }}*/${{ inputs.result-file-name }}

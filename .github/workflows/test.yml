@@ -1,0 +1,54 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        index: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ runner.os }}-competitive-verifier-result-${{ matrix.index }}
+          path: tests/pyres${{ matrix.index }}/competitive-verifier-result.json
+          retention-days: ${{ inputs.retention-days }}
+
+  test:
+    runs-on: ubuntu-latest
+    needs: upload
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Check local
+        id: check-local
+        uses: ./
+        with:
+          local-result-path: tests/pyres*/competitive-verifier-result.json
+
+      - name: Check artifact
+        id: check-artifact
+        uses: ./
+
+      - name: Check failure
+        id: check-failure
+        continue-on-error: true
+        uses: ./
+        with:
+          local-result-path: tests/failure-result.json
+
+      - name: Test failure
+        run: |
+          [ $FAILURE_RESULT = "failure" ]
+        env:
+          FAILURE_RESULT: ${{ steps.check-failure.outcome }}
