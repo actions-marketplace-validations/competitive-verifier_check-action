@@ -1,4 +1,14 @@
-# cache-problems
-Action for checking result of `competitive-verifier`.
+# Check competitive-verifier result
+A composite action that check result of `competitive-verifier`.
 
 See [action.yml](action.yml) or [competitive-verifier/competitive-verifier](https://github.com/competitive-verifier/competitive-verifier).
+
+
+## Example
+
+```yml
+      - name: Check
+        uses: competitive-verifier/check-action@v1
+        with:
+          verify-result: result*/competitive-verifier-result.json
+```

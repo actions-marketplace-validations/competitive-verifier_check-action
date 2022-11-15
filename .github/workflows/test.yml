@@ -8,58 +8,37 @@ on:
   workflow_dispatch:
 
 jobs:
-  upload:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        index: [0, 1, 2, 3]
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ runner.os }}-competitive-verifier-result-${{ matrix.index }}
-          path: tests/pyres${{ matrix.index }}/competitive-verifier-result.json
-          retention-days: ${{ inputs.retention-days }}
-
   test:
     runs-on: ubuntu-latest
-    needs: upload
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Check local
-        id: check-local
+      - name: Set up competitive-verifier
+        uses: competitive-verifier/setup-competitive-verifier@v1
+        with:
+          python-version: "3.9"
+          cache-pip: true
+
+      - name: Check success
+        id: check-success
         uses: ./
         with:
-          local-result-path: tests/pyres*/competitive-verifier-result.json
-      - name: Test local
+          verify-result: tests/pyres*/competitive-verifier-result.json
+      - name: Test success
         run: |
-          [ "${{ steps.check-local.outcome }}" = "success" ]
-          [ "${{ steps.check-local.outputs.result-count }}" = "3" ]
-          [ "${{ steps.check-local.outputs.result-count-success }}" = "3" ]
-          [ "${{ steps.check-local.outputs.result-count-failure }}" = "0" ]
-          [ "${{ steps.check-local.outputs.result-count-skipped }}" = "0" ]
-
-      - name: Check artifact
-        id: check-artifact
-        uses: ./
-      - name: Test artifact
-        run: |
-          [ "${{ steps.check-artifact.outcome }}" = "success" ]
-          [ "${{ steps.check-artifact.outputs.result-count }}" = "3" ]
-          [ "${{ steps.check-artifact.outputs.result-count-success }}" = "3" ]
-          [ "${{ steps.check-artifact.outputs.result-count-failure }}" = "0" ]
-          [ "${{ steps.check-artifact.outputs.result-count-skipped }}" = "0" ]
+          [ "${{ steps.check-success.outcome }}" = "success" ]
+          [ "${{ steps.check-success.outputs.result-count }}" = "3" ]
+          [ "${{ steps.check-success.outputs.result-count-success }}" = "3" ]
+          [ "${{ steps.check-success.outputs.result-count-failure }}" = "0" ]
+          [ "${{ steps.check-success.outputs.result-count-skipped }}" = "0" ]
 
       - name: Check empty
         id: check-empty
         uses: ./
         with:
-          local-result-path: tests/pyres3/competitive-verifier-result.json
-      - name: Test local
+          verify-result: tests/pyres3/competitive-verifier-result.json
+      - name: Test empty
         run: |
           [ "${{ steps.check-empty.outcome }}" = "success" ]
           [ "${{ steps.check-empty.outputs.result-count }}" = "0" ]
@@ -67,12 +46,25 @@ jobs:
           [ "${{ steps.check-empty.outputs.result-count-failure }}" = "0" ]
           [ "${{ steps.check-empty.outputs.result-count-skipped }}" = "0" ]
 
+      - name: Check skipped
+        id: check-skipped
+        uses: ./
+        with:
+          verify-result: tests/contain-skipped.json
+      - name: Test skipped
+        run: |
+          [ "${{ steps.check-skipped.outcome }}" = "success" ]
+          [ "${{ steps.check-skipped.outputs.result-count }}" = "3" ]
+          [ "${{ steps.check-skipped.outputs.result-count-success }}" = "2" ]
+          [ "${{ steps.check-skipped.outputs.result-count-failure }}" = "0" ]
+          [ "${{ steps.check-skipped.outputs.result-count-skipped }}" = "1" ]
+
       - name: Check failure
         id: check-failure
         continue-on-error: true
         uses: ./
         with:
-          local-result-path: tests/failure-result.json
+          verify-result: tests/failure-result.json
       - name: Test failure
         run: |
           [ "${{ steps.check-failure.outcome }}" = "failure" ]
